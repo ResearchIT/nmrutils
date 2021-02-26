@@ -1,0 +1,71 @@
+Bootstrap:docker
+From:centos:7
+Include: yum
+
+%environment
+PATH=/opt/nmrPipe/bin:/opt/xplor-nih/bin:/opt/mars/bin:/opt/nmrPipe/talos/bin/:/opt/nmrPipe/spartaplus/bin:$PATH
+export PATH
+export MARSHOME=/opt/mars/bin
+export SPARTAP_DIR=/opt/sparta
+export SPARTA_DIR=/opt/sparta
+
+%post
+yum update -y
+yum install -y epel-release
+yum install -y git curl which vim wget tar bzip2 gzip gawk mesa-libGL mesa-libGLU tcsh xterm xterm.i686 libgcc.i686 glibc.i686 libX11.so.6 libX11.so.6.i686 libXext.so.6 libXext.so.6.i686 libstdc++.so.6 libstdc++.so.6.i686 xorg-x11-fonts-75dpi xorg-x11-fonts-ISO8859-1-75dpi xorg-x11-fonts-100dpi xorg-x11-fonts-ISO8859-1-100dpi xorg-x11-fonts-misc
+mkdir -p /opt/nmrPipe
+mkdir -p /install
+cd /opt/nmrPipe
+curl -LO http://www.ibbr.umd.edu/nmrpipe/NMRPipeX.tZ
+curl -LO http://www.ibbr.umd.edu/nmrpipe/s.tZ
+curl -LO http://www.ibbr.umd.edu/nmrpipe/install.com
+curl -LO http://www.ibbr.umd.edu/nmrpipe/binval.com
+curl -LO http://www.ibbr.umd.edu/nmrpipe/dyn.tZ
+curl -LO https://spin.niddk.nih.gov/bax/software/talos_nmrPipe.tZ
+#NMRpipe and co install
+chmod +x install.com
+chmod +x binval.com
+tcsh ./install.com +type linux212_64 +dest /opt/nmrPipe +nocshrc +nopost /opt/nmrPipe
+cat << EOF > /etc/profile.d/nmrpipe.csh
+#!/usr/bin/tcsh
+ if (-e /opt/nmrPipe/com/nmrInit.linux212_64.com) then
+    source /opt/nmrPipe/com/nmrInit.linux212_64.com
+ endif
+
+ if (-e /opt/nmrPipe/dynamo/com/dynInit.com) then
+    source /opt/nmrPipe/dynamo/com/dynInit.com
+ endif
+EOF
+cat << EOF > /etc/profile.d/singularity.csh
+set prompt = 'nmrutils > '
+EOF
+ln -s /opt/nmrPipe/nmrbin.linux212_64 /opt/nmrPipe/bin
+
+cd /install
+curl -LO https://nmr.cit.nih.gov/xplor-nih/packages/xplor-nih-3.1-Linux_x86_64.tar.gz 
+curl -LO https://nmr.cit.nih.gov/xplor-nih/packages/xplor-nih-3.1-db.tar.gz
+curl -LO https://www3.mpibpc.mpg.de/groups/zweckstetter/_software_files/_mars/mars-1.2_linux.tar.gz
+
+#xplor install
+tar -xzf xplor-nih-3.1-Linux_x86_64.tar.gz
+tar -xzf xplor-nih-3.1-db.tar.gz
+mv xplor-nih-3.1 /opt/xplor-nih
+cd /opt/xplor-nih
+./configure
+
+cd /install
+#mars
+tar -xzf mars-1.2_linux.tar.gz
+mv mars-1.2_linux /opt/mars
+
+#sparta+ included in nmrpipe supposedly
+#talos+ also included in nmrpipe
+#cleanup
+yum clean all
+rm -rf /var/cache/yum/*
+rm -rf /install
+rm -rf /opt/nmrPipe/{*.tZ,install.com,binval.com,nmrbin.mac11_64}
+
+%runscript
+exec "$@"
+
