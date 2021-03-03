@@ -57,6 +57,8 @@ cd /install
 #mars
 tar -xzf mars-1.2_linux.tar.gz
 mv mars-1.2_linux /opt/mars
+chmod -R o+rX /opt/mars
+chmod o+rx /opt/mars/bin/*
 
 #sparta+ included in nmrpipe supposedly
 #talos+ also included in nmrpipe
